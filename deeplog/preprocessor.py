@@ -38,7 +38,7 @@ class Preprocessor(object):
     #                      General data preprocessing                      #
     ########################################################################
 
-    def sequence(self, data, labels=None, verbose=False):
+    def sequence(self, data, labels=None, verbose=False, mapping=None):
         """Transform pandas DataFrame into DeepCASE sequences.
 
             Parameters
@@ -53,6 +53,11 @@ class Preprocessor(object):
 
             verbose : boolean, default=False
                 If True, prints progress in transforming input to sequences.
+
+            mapping : dict(), default=None, optional
+                Use previously created mapping. If there are additional unique values,
+                they will be appended to the passed mapping.
+                Note: NO_EVENT should not be included in passed mapping values
 
             Returns
             -------
@@ -105,9 +110,17 @@ class Preprocessor(object):
         ################################################################
 
         # Create mapping of events
-        mapping = {
-            i: event for i, event in enumerate(np.unique(data['event'].values))
-        }
+        if mapping is None:
+            mapping = {
+                i: event for i, event in enumerate(np.unique(data['event'].values))
+            }
+        # Add missing events mappings
+        else:
+            mapping = mapping.copy()
+            difference = list(set(data['event'].values) - set(mapping.values()))
+            max_key = len(mapping)
+            for i, val in enumerate(difference):
+                mapping[i+max_key] = val
 
         # Check that NO_EVENT is not in events
         if self.NO_EVENT in mapping.values():
@@ -202,7 +215,7 @@ class Preprocessor(object):
     #                     Preprocess different formats                     #
     ########################################################################
 
-    def csv(self, path, nrows=None, labels=None, verbose=False):
+    def csv(self, path, nrows=None, labels=None, verbose=False, mapping=None):
         """Preprocess data from csv file.
 
             Note
@@ -228,6 +241,11 @@ class Preprocessor(object):
             verbose : boolean, default=False
                 If True, prints progress in transforming input to sequences.
 
+            mapping : dict(), default=None, optional
+                Use previously created mapping. If there are additional unique values,
+                they will be appended to the passed mapping.
+                Note: NO_EVENT should not be included in passed mapping values
+
             Returns
             -------
             events : torch.Tensor of shape=(n_samples,)
@@ -244,10 +262,10 @@ class Preprocessor(object):
         data = pd.read_csv(path, nrows=nrows)
 
         # Transform to sequences and return
-        return self.sequence(data, labels=labels, verbose=verbose)
+        return self.sequence(data, labels=labels, verbose=verbose, mapping=mapping)
 
 
-    def json(self, path, labels=None, verbose=False):
+    def json(self, path, labels=None, verbose=False, mapping=None):
         """Preprocess data from json file.
 
             Note
@@ -267,6 +285,11 @@ class Preprocessor(object):
             verbose : boolean, default=False
                 If True, prints progress in transforming input to sequences.
 
+            mapping : dict(), default=None, optional
+                Use previously created mapping. If there are additional unique values,
+                they will be appended to the passed mapping.
+                Note: NO_EVENT should not be included in passed mapping values
+
             Returns
             -------
             events : torch.Tensor of shape=(n_samples,)
@@ -282,7 +305,7 @@ class Preprocessor(object):
         raise NotImplementedError("Parsing '.json' not yet implemented.")
 
 
-    def ndjson(self, path, labels=None, verbose=False):
+    def ndjson(self, path, labels=None, verbose=False, mapping=None):
         """Preprocess data from ndjson file.
 
             Note
@@ -302,6 +325,11 @@ class Preprocessor(object):
             verbose : boolean, default=False
                 If True, prints progress in transforming input to sequences.
 
+            mapping : dict(), default=None, optional
+                Use previously created mapping. If there are additional unique values,
+                they will be appended to the passed mapping.
+                Note: NO_EVENT should not be included in passed mapping values
+
             Returns
             -------
             events : torch.Tensor of shape=(n_samples,)
@@ -317,7 +345,7 @@ class Preprocessor(object):
         raise NotImplementedError("Parsing '.ndjson' not yet implemented.")
 
 
-    def text(self, path, nrows=None, labels=None, verbose=False):
+    def text(self, path, nrows=None, labels=None, verbose=False, mapping=None):
         """Preprocess data from text file.
 
             Note
@@ -341,6 +369,11 @@ class Preprocessor(object):
 
             verbose : boolean, default=False
                 If True, prints progress in transforming input to sequences.
+
+            mapping : dict(), default=None, optional
+                Use previously created mapping. If there are additional unique values,
+                they will be appended to the passed mapping.
+                Note: NO_EVENT should not be included in passed mapping values
 
             Returns
             -------
@@ -382,7 +415,7 @@ class Preprocessor(object):
         })
 
         # Transform to sequences and return
-        return self.sequence(data, labels=labels, verbose=verbose)
+        return self.sequence(data, labels=labels, verbose=verbose, mapping=mapping)
 
 
 if __name__ == "__main__":
